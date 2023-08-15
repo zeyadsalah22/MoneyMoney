@@ -2,21 +2,21 @@
 
 {% block body %}
 <form action="{% url 'create'%}" method="POST">
-    <div>
+    <div class="row">
+    <div class="col-2">
         <label>Title</label>
-        <input type="text">
-    </div>
-    <div>
         <label>Description</label>
-        <input type="text">
+        <label>Starting Bid</label>
+        <label>Image URL</label>
+        <label>Category</label>
     </div>
-    <div>
-        <label>Title</label>
-        <input type="text">
+    <div class="col-4">
+        <input type="text" name="title" required>
+        <input type="text" name="description" required>
+        <input type="number" name="price" required>
+        <input type="url" name="image">
+        <input type="text" name="category">
     </div>
-    <div>
-        <label>Title</label>
-        <input type="text">
     </div>
 
 </form>
