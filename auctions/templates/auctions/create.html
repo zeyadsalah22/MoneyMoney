@@ -1,0 +1,24 @@
+{% extends 'auctions/layout.html' %}
+
+{% block body %}
+<form action="{% url 'create'%}" method="POST">
+    <div>
+        <label>Title</label>
+        <input type="text">
+    </div>
+    <div>
+        <label>Description</label>
+        <input type="text">
+    </div>
+    <div>
+        <label>Title</label>
+        <input type="text">
+    </div>
+    <div>
+        <label>Title</label>
+        <input type="text">
+    </div>
+
+</form>
+
+{% endblock %}
