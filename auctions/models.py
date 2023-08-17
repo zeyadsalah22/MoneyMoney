@@ -14,7 +14,7 @@ class Listing(models.Model):
     category = models.CharField(blank=True, max_length=64)
     image_url = models.URLField(blank=True)
     seller = models.ForeignKey(User,on_delete=models.CASCADE, related_name="possesion")
-
+    status = models.CharField(default="active",max_length=64)
     def __str__(self):
         return f"Listing: {self.title}, Price: {self.current_price}"
 
@@ -28,8 +28,15 @@ class Bid(models.Model):
 
 class Comment(models.Model):
     comment = models.TextField()
-    product = models.ForeignKey(Listing,on_delete=models.CASCADE, related_name="goods")
-    writer = models.ForeignKey(User,on_delete=models.CASCADE, related_name="user")
+    product = models.ForeignKey(Listing,on_delete=models.CASCADE)
+    writer = models.ForeignKey(User,on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.writer.username} commented on {self.product.title}"
+
+class WatchList(models.Model):
+    item = models.ForeignKey(Listing,on_delete=models.CASCADE )
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Listing: {self.item.title} on the watchlist of {self.user.username}"

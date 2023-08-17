@@ -11,6 +11,7 @@
         <label>Category</label>
     </div>
     <div class="col-4">
+        {% csrf_token %}
         <input type="text" name="title" required>
         <input type="text" name="description" required>
         <input type="number" name="price" required>
@@ -18,7 +19,7 @@
         <input type="text" name="category">
     </div>
     </div>
-
+    <input type="submit">
 </form>
 
 {% endblock %}
