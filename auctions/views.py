@@ -1,27 +1,27 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
-from .models import User,Listing,Comment,Bid,WatchList
+from .models import User, Listing, Comment, Bid, WatchList, Like, Category
 
-
+# ---------- Index Page ----------
 def index(request):
-    return render(request, "auctions/index.html",{
-        "listings":Listing.objects.filter(status="active")
+    listings = Listing.objects.filter(status="active")
+    return render(request, "auctions/index.html", {
+        "listings": listings
     })
 
-
+# ---------- Authentication ----------
 def login_view(request):
     if request.method == "POST":
-
-        # Attempt to sign user in
         username = request.POST["username"]
         password = request.POST["password"]
         user = authenticate(request, username=username, password=password)
-
-        # Check if authentication successful
         if user is not None:
             login(request, user)
             return HttpResponseRedirect(reverse("index"))
@@ -29,8 +29,7 @@ def login_view(request):
             return render(request, "auctions/login.html", {
                 "message": "Invalid username and/or password."
             })
-    else:
-        return render(request, "auctions/login.html")
+    return render(request, "auctions/login.html")
 
 
 def logout_view(request):
@@ -42,143 +41,242 @@ def register(request):
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
-
-        # Ensure password matches confirmation
+        user_type = request.POST.get("user_type", "bidder")
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
+
         if password != confirmation:
             return render(request, "auctions/register.html", {
                 "message": "Passwords must match."
             })
 
-        # Attempt to create new user
         try:
             user = User.objects.create_user(username, email, password)
+            user.user_type = user_type
             user.save()
         except IntegrityError:
             return render(request, "auctions/register.html", {
                 "message": "Username already taken."
             })
+
         login(request, user)
         return HttpResponseRedirect(reverse("index"))
-    else:
-        return render(request, "auctions/register.html")
 
+    return render(request, "auctions/register.html", {
+        "user_types": User.USER_TYPE_CHOICES
+    })
 
+# ---------- Listing Creation ----------
 def create(request):
-    if request.method=="GET":
-        return render(request,"auctions/create.html",{
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse("login"))
+        
+    if request.user.user_type not in ['seller', 'both']:
+        return render(request, "auctions/create.html", {
+            "message": "Only sellers can create listings. Please update your account type.",
+            "categories": Category.objects.all()
+        })
+        
+    if request.method == "GET":
+        return render(request, "auctions/create.html", {
+            "categories": Category.objects.all()
         })
     else:
-        title = request.POST['title']
-        description = request.POST['description']
-        price = float(request.POST['price'])
-        image = request.POST['image']
-        category = request.POST['category']
-        item = Listing.objects.create(title=title,description=description, current_price=price, category=category, image_url = image,seller=request.user)    
-        item.save()
-        return HttpResponseRedirect(reverse("index"))
+        try:
+            title = request.POST['title']
+            description = request.POST['description']
+            price = float(request.POST['price'])
+            image = request.POST.get('image', '')
+            category_id = request.POST.get('category')
+            
+            category = None
+            if category_id:
+                category = Category.objects.get(id=category_id)
+                
+            listing = Listing.objects.create(
+                title=title,
+                description=description,
+                current_price=price,
+                image_url=image,
+                category=category,
+                seller=request.user
+            )
+            
+            return HttpResponseRedirect(reverse("index"))
+            
+        except Exception as e:
+            return render(request, "auctions/create.html", {
+                "message": str(e),
+                "categories": Category.objects.all()
+            })
 
-def listing_page(request,title):
-    listing = Listing.objects.get(title=title)
+# ---------- Interactive Actions (AJAX) ----------
+@require_POST
+@login_required
+def like(request, listing_id):
+    listing = get_object_or_404(Listing, id=listing_id)
+    like, created = Like.objects.get_or_create(user=request.user, listing=listing)
+    if not created:
+        like.delete()
+    return JsonResponse({
+        'liked': created,
+        'likes_count': listing.likes.count()
+    })
+
+
+@require_POST
+@login_required
+def comment(request, title):
+    listing = get_object_or_404(Listing, title=title)
+    comment_text = request.POST.get('comment')
+
+    if not comment_text:
+        return JsonResponse({'error': 'Comment cannot be empty'}, status=400)
+
+    Comment.objects.create(
+        writer=request.user,
+        product=listing,
+        comment=comment_text
+    )
+    return JsonResponse({
+        'username': request.user.username,
+        'comment': comment_text
+    })
+
+
+@require_POST
+@login_required
+def bid(request, item):
+    listing = get_object_or_404(Listing, title=item)
+    
+    try:
+        bid_amount = request.POST.get('bid')
+        if not bid_amount:
+            return JsonResponse({
+                'success': False,
+                'message': 'Bid amount is required'
+            }, status=400)
+            
+        try:
+            bid_amount = float(bid_amount)
+        except (ValueError, TypeError):
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid bid amount'
+            }, status=400)
+            
+        if bid_amount <= listing.current_price:
+            return JsonResponse({
+                'success': False,
+                'message': f'Bid must be greater than current price (${listing.current_price})'
+            }, status=400)
+
+        Bid.objects.create(
+            listing=listing,
+            bidder=request.user,
+            price=bid_amount
+        )
+        
+        listing.current_price = bid_amount
+        listing.save()
+
+        return JsonResponse({
+            'success': True,
+            'new_price': listing.current_price,
+            'bid_count': Bid.objects.filter(listing=listing).count(),
+            'message': 'Your bid is the current bid'
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+
+@require_POST
+@login_required
+def watch(request, title):
+    listing = get_object_or_404(Listing, title=title)
+    watchlist, created = WatchList.objects.get_or_create(user=request.user, item=listing)
+    if not created:
+        watchlist.delete()
+    return JsonResponse({'watchlist': created})
+
+# ---------- Listing View ----------
+def listing_page(request, title):
+    listing = get_object_or_404(Listing, title=title)
     bids = Bid.objects.filter(listing=listing)
     comments = Comment.objects.filter(product=listing)
-    if request.method=="POST":
-        comment = request.POST['comment']
-        new_comment = Comment.objects.create(comment=comment,product=listing,writer=request.user)
-        new_comment.save()
-        comments = Comment.objects.filter(product=listing)
+    watch = False
+    condition = False
+
     if request.user.is_authenticated:
         user = request.user
-    else:
-        user=None 
-    return render(request,"auctions/listing.html",{
-        "listing":listing,
+        watch = WatchList.objects.filter(user=user, item=listing).exists()
+        condition = bids.filter(bidder=user).exists()
+
+    return render(request, "auctions/listing.html", {
+        "listing": listing,
         "bids": bids.count(),
-        "comments":comments,
-        "condition": Bid.objects.filter(listing=listing,price=listing.current_price,bidder=user),
-        "watch": WatchList.objects.filter(user=user ,item=listing)
+        "comments": comments,
+        "watch": watch,
+        "condition": condition
     })
 
-def bid(request,item):
-    if request.method=="POST":
-        listing = Listing.objects.get(title=item)
-        bids = Bid.objects.filter(listing=listing)
-        comments = Comment.objects.filter(product=listing)
-        price = float(request.POST['bid'])
-        if price<=listing.current_price and not (price>=listing.current_price and bids.count()==0):
-            return render(request,'auctions/listing.html',{
-                "listing":listing,
-                "bids": bids.count(),
-                "condition": Bid.objects.filter(listing=listing,price=listing.current_price,bidder=request.user),
-                "message": "your bid must be greater than the current price",
-                "comments":comments,
-                "watch": WatchList.objects.filter(user=request.user,item=listing)
-            })
-        else:
-            new_bid = Bid.objects.create(bidder=request.user,listing=listing,price=price)
-            new_bid.save()
-            listing.current_price=price
-            listing.save()
-            return render(request,'auctions/listing.html',{
-                "listing":listing,
-                "bids": bids.count(),
-                "condition": Bid.objects.filter(listing=listing,price=listing.current_price,bidder=request.user),
-                "message": "Your bid has been placed successfully",
-                "comments":comments,
-                "watch": WatchList.objects.filter(user=request.user,item=listing)
-            })
+# ---------- Watchlist View ----------
+@login_required
+def watchlist(request):
+    watchlist_items = WatchList.objects.filter(user=request.user)
+    listings = [item.item for item in watchlist_items]
+    return render(request, 'auctions/watch.html', {
+        "listings": listings
+    })
 
-def watch(request,title):
-    listing = Listing.objects.get(title=title)
-    bids = Bid.objects.filter(listing=listing)
-    comments = Comment.objects.filter(product=listing)
-    if request.method=='POST':
-        watchlist = request.POST['watchlist']
-        if watchlist=='+':
-            new_watch = WatchList.objects.create(item=listing,user=request.user)
-            new_watch.save()
-        else:
-            removed_watch = WatchList.objects.filter(item=listing,user=request.user)
-            removed_watch.delete()
-        return render(request,"auctions/listing.html",{
-            "listing":listing,
-            "bids": bids.count(),
-            "comments":comments,
-            "condition": Bid.objects.filter(listing=listing,price=listing.current_price,bidder=request.user),
-            "watch": WatchList.objects.filter(user=request.user,item=listing)
+# ---------- Category Views ----------
+def category(request):
+    return render(request, 'auctions/category.html', {
+        "categories": Category.objects.all()
+    })
+
+def category_listings(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    listings = Listing.objects.filter(category=category)
+    return render(request, "auctions/index.html", {
+        "listings": listings,
+        "category": category
+    })
+
+# ---------- Close Auction ----------
+@login_required
+def close(request, title):
+    listing = get_object_or_404(Listing, title=title)
+    listing.status = "closed"
+    listing.save()
+    return HttpResponseRedirect(reverse("index"))
+
+# ---------- Category API ----------
+@require_POST
+@login_required
+def create_category(request):
+    name = request.POST.get('name')
+    description = request.POST.get('description')
+
+    if not name:
+        return JsonResponse({
+            'success': False,
+            'error': 'Category name is required'
         })
 
-
-def watchlist(request):
-    list = WatchList.objects.filter(user=request.user)
-    listings = []
-    for i in list:
-        listings.append(i.item)
-    return render(request,'auctions/watch.html',{
-        "listings":listings
-    })
-
-def close(request,title):
-    listing = Listing.objects.get(title=title)
-    listing.status="closed"
-    listing.save()
-    return render(request,'auctions/index.html',{
-        "listings":Listing.objects.filter(status="active")
-    })
-
-def category(request):
-    listings = Listing.objects.all()
-    categories = []
-    for listing in listings:
-        if listing.category not in categories and listing.category:
-            categories.append(listing.category)
-    return render(request,'auctions/category.html',{
-        "categories":categories
-    })
-
-def category_listings(request,category):
-    listings = Listing.objects.filter(category=category)
-    return render(request,"auctions/index.html",{
-        "listings":listings
-    })
+    try:
+        category = Category.objects.create(name=name, description=description)
+        return JsonResponse({
+            'success': True,
+            'id': category.id,
+            'name': category.name
+        })
+    except IntegrityError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Category already exists'
+        })

@@ -1,25 +1,117 @@
 {% extends 'auctions/layout.html' %}
+{% load static %}
 
 {% block body %}
-<form action="{% url 'create'%}" method="POST">
-    <div class="row">
-    <div class="col-2">
-        <label>Title</label>
-        <label>Description</label>
-        <label>Starting Bid</label>
-        <label>Image URL</label>
-        <label>Category</label>
-    </div>
-    <div class="col-4">
-        {% csrf_token %}
-        <input type="text" name="title" required>
-        <input type="text" name="description" required>
-        <input type="number" name="price" required>
-        <input type="url" name="image">
-        <input type="text" name="category">
-    </div>
-    </div>
-    <input type="submit">
-</form>
+    {% if message %}
+        <div class="alert alert-danger" role="alert">
+            {{ message }}
+        </div>
+    {% endif %}
 
+    {% if user.is_authenticated and user.user_type in 'seller,both' %}
+        <h2>Create New Listing</h2>
+        <form action="{% url 'create' %}" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input class="form-control" type="text" name="title" id="title" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea class="form-control" name="description" id="description" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="price">Starting Bid</label>
+                <input class="form-control" type="number" name="price" id="price" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="image">Image URL</label>
+                <input class="form-control" type="url" name="image" id="image">
+            </div>
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select class="form-control" name="category" id="category">
+                    <option value="">No Category</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Listing</button>
+        </form>
+
+        <!-- New Category Modal -->
+        <div class="modal fade" id="newCategoryModal" tabindex="-1" role="dialog" aria-labelledby="newCategoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="newCategoryModalLabel">Create New Category</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="new-category-form">
+                            <div class="form-group">
+                                <label for="category-name">Category Name</label>
+                                <input type="text" class="form-control" id="category-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="category-description">Description</label>
+                                <textarea class="form-control" id="category-description" rows="3"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="save-category">Save Category</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveCategoryBtn = document.getElementById('save-category');
+        const categorySelect = document.getElementById('category');
+        
+        saveCategoryBtn.addEventListener('click', function() {
+            const name = document.getElementById('category-name').value;
+            const description = document.getElementById('category-description').value;
+            
+            fetch("{% url 'create_category' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `name=${encodeURIComponent(name)}&description=${encodeURIComponent(description)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Add new category to select
+                    const option = document.createElement('option');
+                    option.value = data.id;
+                    option.textContent = data.name;
+                    categorySelect.appendChild(option);
+                    categorySelect.value = data.id;
+                    
+                    // Close modal and reset form
+                    $('#newCategoryModal').modal('hide');
+                    document.getElementById('new-category-form').reset();
+                } else {
+                    alert(data.error || 'Failed to create category');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create category');
+            });
+        });
+    });
+</script>
 {% endblock %}
