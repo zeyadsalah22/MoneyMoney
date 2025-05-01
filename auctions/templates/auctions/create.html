@@ -2,41 +2,56 @@
 {% load static %}
 
 {% block body %}
-    {% if message %}
-        <div class="alert alert-danger" role="alert">
-            {{ message }}
-        </div>
-    {% endif %}
-
-    {% if user.is_authenticated and user.user_type in 'seller,both' %}
+    <div class="container">
         <h2>Create New Listing</h2>
-        <form action="{% url 'create' %}" method="POST">
+
+        {% if message %}
+            <div class="alert alert-danger">{{ message }}</div>
+        {% endif %}
+
+        <form action="{% url 'create' %}" method="post">
             {% csrf_token %}
             <div class="form-group">
                 <label for="title">Title</label>
-                <input class="form-control" type="text" name="title" id="title" required>
+                <input type="text" class="form-control" id="title" name="title" required>
             </div>
+
             <div class="form-group">
                 <label for="description">Description</label>
-                <textarea class="form-control" name="description" id="description" rows="3" required></textarea>
+                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
             </div>
+
             <div class="form-group">
-                <label for="price">Starting Bid</label>
-                <input class="form-control" type="number" name="price" id="price" step="0.01" required>
+                <label for="price">Starting Price ($)</label>
+                <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" required>
             </div>
+
             <div class="form-group">
-                <label for="image">Image URL</label>
-                <input class="form-control" type="url" name="image" id="image">
+                <label for="image">Image URL (optional)</label>
+                <input type="url" class="form-control" id="image" name="image">
             </div>
+
             <div class="form-group">
-                <label for="category">Category</label>
-                <select class="form-control" name="category" id="category">
-                    <option value="">No Category</option>
+                <div class="d-flex justify-content-between align-items-center">
+                    <label for="category">Category (optional)</label>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#newCategoryModal">
+                        + New Category
+                    </button>
+                </div>
+                <select class="form-control" id="category" name="category">
+                    <option value="">Select a category</option>
                     {% for category in categories %}
                         <option value="{{ category.id }}">{{ category.name }}</option>
                     {% endfor %}
                 </select>
             </div>
+
+            <div class="form-group">
+                <label for="end_date">End Date (optional)</label>
+                <input type="datetime-local" class="form-control" id="end_date" name="end_date">
+                <small class="form-text text-muted">If not specified, the auction will end in 7 days.</small>
+            </div>
+
             <button type="submit" class="btn btn-primary">Create Listing</button>
         </form>
 
@@ -69,7 +84,7 @@
                 </div>
             </div>
         </div>
-    {% endif %}
+    </div>
 {% endblock %}
 
 {% block script %}

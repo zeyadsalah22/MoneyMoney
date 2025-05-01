@@ -6,12 +6,13 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 
 from .models import User, Listing, Comment, Bid, WatchList, Like, Category
 
 # ---------- Index Page ----------
 def index(request):
-    listings = Listing.objects.filter(status="active")
+    listings = Listing.objects.filter(status=True)
     return render(request, "auctions/index.html", {
         "listings": listings
     })
@@ -66,6 +67,14 @@ def register(request):
         "user_types": User.USER_TYPE_CHOICES
     })
 
+# ---------- Won Auctions View ----------
+@login_required
+def won_auctions(request):
+    listings = Listing.objects.filter(winner=request.user, status=False)
+    return render(request, "auctions/won_auctions.html", {
+        "listings": listings
+    })
+
 # ---------- Listing Creation ----------
 def create(request):
     if not request.user.is_authenticated:
@@ -85,9 +94,10 @@ def create(request):
         try:
             title = request.POST['title']
             description = request.POST['description']
-            price = float(request.POST['price'])
+            starting_price = float(request.POST['price'])
             image = request.POST.get('image', '')
             category_id = request.POST.get('category')
+            end_date = request.POST.get('end_date')
             
             category = None
             if category_id:
@@ -96,10 +106,12 @@ def create(request):
             listing = Listing.objects.create(
                 title=title,
                 description=description,
-                current_price=price,
+                starting_price=starting_price,
+                current_price=starting_price,
                 image_url=image,
                 category=category,
-                seller=request.user
+                seller=request.user,
+                end_date=end_date if end_date else None
             )
             
             return HttpResponseRedirect(reverse("index"))
@@ -109,6 +121,32 @@ def create(request):
                 "message": str(e),
                 "categories": Category.objects.all()
             })
+
+# ---------- Category Creation ----------
+@require_POST
+@login_required
+def create_category(request):
+    name = request.POST.get('name')
+    description = request.POST.get('description')
+
+    if not name:
+        return JsonResponse({
+            'success': False,
+            'error': 'Category name is required'
+        })
+
+    try:
+        category = Category.objects.create(name=name, description=description)
+        return JsonResponse({
+            'success': True,
+            'id': category.id,
+            'name': category.name
+        })
+    except IntegrityError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Category already exists'
+        })
 
 # ---------- Interactive Actions (AJAX) ----------
 @require_POST
@@ -148,6 +186,12 @@ def comment(request, title):
 @login_required
 def bid(request, item):
     listing = get_object_or_404(Listing, title=item)
+    
+    if not listing.is_active():
+        return JsonResponse({
+            'success': False,
+            'message': 'This auction has ended'
+        }, status=400)
     
     try:
         bid_amount = request.POST.get('bid')
@@ -210,6 +254,7 @@ def listing_page(request, title):
     comments = Comment.objects.filter(product=listing)
     watch = False
     condition = False
+    is_active = listing.is_active()
 
     if request.user.is_authenticated:
         user = request.user
@@ -221,7 +266,9 @@ def listing_page(request, title):
         "bids": bids.count(),
         "comments": comments,
         "watch": watch,
-        "condition": condition
+        "condition": condition,
+        "is_active": is_active,
+        "time_remaining": listing.end_date - timezone.now() if is_active else None
     })
 
 # ---------- Watchlist View ----------
@@ -241,7 +288,7 @@ def category(request):
 
 def category_listings(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    listings = Listing.objects.filter(category=category)
+    listings = Listing.objects.filter(category=category, status=True)
     return render(request, "auctions/index.html", {
         "listings": listings,
         "category": category
@@ -251,32 +298,5 @@ def category_listings(request, category_id):
 @login_required
 def close(request, title):
     listing = get_object_or_404(Listing, title=title)
-    listing.status = "closed"
-    listing.save()
+    listing.close_auction()
     return HttpResponseRedirect(reverse("index"))
-
-# ---------- Category API ----------
-@require_POST
-@login_required
-def create_category(request):
-    name = request.POST.get('name')
-    description = request.POST.get('description')
-
-    if not name:
-        return JsonResponse({
-            'success': False,
-            'error': 'Category name is required'
-        })
-
-    try:
-        category = Category.objects.create(name=name, description=description)
-        return JsonResponse({
-            'success': True,
-            'id': category.id,
-            'name': category.name
-        })
-    except IntegrityError:
-        return JsonResponse({
-            'success': False,
-            'error': 'Category already exists'
-        })

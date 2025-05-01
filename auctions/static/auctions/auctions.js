@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBidForm();
     setupLikeButton();
     setupCommentForm();
+    updateTimeRemaining();
 });
 
 // Toggle watchlist
@@ -138,6 +139,34 @@ function setupCommentForm() {
             }
         });
     };
+}
+
+// Update time remaining
+function updateTimeRemaining() {
+    const timeRemainingElement = document.querySelector("#time-remaining");
+    if (!timeRemainingElement) return;
+
+    const endDate = new Date(timeRemainingElement.dataset.endDate);
+    const updateTimer = () => {
+        const now = new Date();
+        const diff = endDate - now;
+
+        if (diff <= 0) {
+            timeRemainingElement.textContent = "Auction ended";
+            timeRemainingElement.className = "text-danger";
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        timeRemainingElement.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    };
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
 }
 
 // Utility: get CSRF token

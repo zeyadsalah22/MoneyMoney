@@ -2,103 +2,135 @@
 {% load static %}
 
 {% block body %}
-<h2>Listing: {{ listing.title }}</h2>
-
-{% if user.is_authenticated %}
-<!-- Watchlist Button -->
-<button class="watchlist-button btn {% if watch %}btn-secondary{% else %}btn-outline-secondary{% endif %}" 
-        data-listing="{{ listing.title }}">
-    {% if watch %}- Watchlist{% else %}+ Watchlist{% endif %}
-</button>
-
-<!-- Like Button -->
-<div class="like-section my-2">
-    <button id="like-button" class="btn {% if user in listing.likes.all %}btn-danger{% else %}btn-outline-danger{% endif %} btn-sm" 
-            data-listing-id="{{ listing.id }}">
-        <i class="bi {% if user in listing.likes.all %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
-        <span id="like-count">{{ listing.likes.count }}</span>
-    </button>
-</div>
-{% endif %}
-
-<div class="row">
-    <div class="col-md-8">
-        <img src="{{ listing.image_url }}" class="listing-detail-image" alt="{{ listing.title }}">
-    </div>
-</div>
-
-<p>{{ listing.description }}</p>
-<h4 id="current-price">${{ listing.current_price }}</h4>
-
-{% if user.is_authenticated %}
-    {% if user == listing.seller %}
-        <form action="{% url 'close' title=listing.title %}" method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="close" value="close">
-            <button type="submit" class="btn btn-secondary mt-2">Close Auction</button>
-        </form>
-    {% elif condition and listing.status == "closed" %}
-        <h4 class="text-success mt-3">You have won the auction</h4>
-    {% elif listing.status == "closed" %}
-        <h4 class="mt-3">Auction is closed</h4>
-    {% else %}
-        {% if user.user_type in 'bidder,both' %}
-            <!-- Bid Form -->
-            <form id="bid-form" data-listing="{{ listing.title }}">
-                {% csrf_token %}
-                <div id="bid-message" class="mb-2"></div>
-                <span id="bid-count">{{ bids }} bid(s) so far.</span>
-                {% if condition %}
-                    <span id="current-bid-message" class="text-success">Your bid is the current bid</span>
-                {% endif %}
-                <br>
-                <input class="form-control mt-2" id="bid-input" type="number" placeholder="Bid" required>
-                <button type="submit" class="btn btn-primary mt-2">Place Bid</button>
-            </form>
-        {% else %}
-            <div class="alert alert-warning mt-3" role="alert">
-                You need to be a bidder to place bids. Please update your account type.
-            </div>
-        {% endif %}
-    {% endif %}
-{% endif %}
-
-<!-- Listing Details -->
-<div class="mt-4">
-    <h4>Details</h4>
-    <ul>
-        <li>Listed by: {{ listing.seller.username }}</li>
-        <li>Category: {{ listing.category|default:"No Category Listed" }}</li>
-    </ul>
-</div>
-
-<!-- Comments Section -->
-<div class="mt-4">
-    <h3>Comments</h3>
-    <div id="comments-section">
-        {% for comment in comments %}
-        <div>
-            <h5 class="text-primary">{{ comment.writer.username }}</h5>
-            <p>{{ comment.comment }}</p>
-            <hr>
+<div class="container">
+    <h2>{{ listing.title }}</h2>
+    
+    {% if not listing.is_active %}
+        <div class="alert alert-warning">
+            This auction has ended.
+            {% if listing.winner %}
+                <strong>Winner: {{ listing.winner.username }}</strong>
+            {% endif %}
         </div>
-        {% empty %}
-        <h5>No Comments</h5>
-        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            {% if listing.image_url %}
+                <img src="{{ listing.image_url }}" class="img-fluid" alt="{{ listing.title }}">
+            {% endif %}
+            
+            <div class="mt-3">
+                <h4>Description</h4>
+                <p>{{ listing.description }}</p>
+            </div>
+
+            <div class="mt-3">
+                <h4>Details</h4>
+                <ul class="list-unstyled">
+                    <li><strong>Category:</strong> {{ listing.category.name|default:"No category" }}</li>
+                    <li><strong>Seller:</strong> {{ listing.seller.username }}</li>
+                    <li><strong>Starting Price:</strong> ${{ listing.starting_price }}</li>
+                    <li><strong>Current Price:</strong> ${{ listing.current_price }}</li>
+                    <li><strong>Created:</strong> {{ listing.created_at|date:"F j, Y" }}</li>
+                    {% if listing.is_active %}
+                        <li>
+                            <strong>Time Remaining:</strong>
+                            <span id="time-remaining" data-end-date="{{ listing.end_date|date:'c' }}">
+                                Loading...
+                            </span>
+                        </li>
+                    {% else %}
+                        <li><strong>Ended:</strong> {{ listing.end_date|date:"F j, Y" }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Bidding</h5>
+                    <p class="card-text">
+                        Current Price: $<span id="current-price">{{ listing.current_price }}</span>
+                    </p>
+                    <p class="card-text">
+                        <span id="bid-count">{{ bids }}</span> bid(s) so far.
+                    </p>
+
+                    {% if user.is_authenticated and listing.is_active %}
+                        {% if user != listing.seller %}
+                            <form id="bid-form" data-listing="{{ listing.title }}">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <input type="number" class="form-control" id="bid-input" 
+                                           min="{{ listing.current_price|add:'0.01' }}" 
+                                           step="0.01" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary mt-2">Place Bid</button>
+                            </form>
+                            <div id="bid-message" class="mt-2"></div>
+                        {% else %}
+                            <form action="{% url 'close' listing.title %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning">Close Auction</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Actions</h5>
+                    {% if user.is_authenticated %}
+                        <button class="btn btn-outline-secondary watchlist-button" 
+                                data-listing="{{ listing.title }}">
+                            {% if watch %}- Watchlist{% else %}+ Watchlist{% endif %}
+                        </button>
+                        
+                        <button id="like-button" class="btn btn-outline-danger" 
+                                data-listing-id="{{ listing.id }}">
+                            <i class="bi {% if user in listing.likes.all %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                            <span id="like-count">{{ listing.likes.count }}</span>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    {% if user.is_authenticated %}
-    <form id="comment-form" data-listing="{{ listing.title }}" class="mt-3">
-        {% csrf_token %}
-        <input class="form-control" id="comment-input" type="text" name="comment" placeholder="Write a comment..." required>
-        <button type="submit" class="btn btn-primary mt-2">Comment</button>
-    </form>
-    {% endif %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>Comments</h4>
+            {% if user.is_authenticated %}
+                <form id="comment-form" data-listing="{{ listing.title }}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <textarea class="form-control" id="comment-input" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Add Comment</button>
+                </form>
+            {% endif %}
+
+            <div id="comments-section" class="mt-3">
+                {% for comment in comments %}
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h5 class="card-title" style="color:blue;">{{ comment.writer.username }}</h5>
+                            <p class="card-text">{{ comment.comment }}</p>
+                            <small class="text-muted">{{ comment.created_at|date:"F j, Y" }}</small>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Styles -->
 <style>
-    .listing-detail-image {
+    .img-fluid {
         width: 100%;
         height: 400px;
         object-fit: cover;
