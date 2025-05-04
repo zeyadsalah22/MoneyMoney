@@ -25,8 +25,22 @@ SECRET_KEY = '6ps8j!crjgrxt34cqbqn7x&b3y%(fny8k8nh21+qa)%ws3fh!q'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['better-fiann-zeyadsalah-3825b5df.koyeb.app']
+ALLOWED_HOSTS = [
+    'better-fiann-zeyadsalah-3825b5df.koyeb.app',
+    'www.better-fiann-zeyadsalah-3825b5df.koyeb.app',
+    'better-fiann-zeyadsalah-3825b5df.koyeb.app.',
+    'www.better-fiann-zeyadsalah-3825b5df.koyeb.app.',
+    'localhost',
+    '127.0.0.1'
+]
 
+# Security settings
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 # Application definition
 
