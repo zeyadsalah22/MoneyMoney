@@ -1,21 +1,12 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    {% if category %}
-        <h2>{{ category.name }}</h2>
-        {% if category.description %}
-            <p class="lead">{{ category.description }}</p>
-        {% endif %}
-        <p class="text-muted">Created on {{ category.created_at|date:"F j, Y" }}</p>
-        <hr>
-    {% else %}
-        <h2>Active Listings</h2>
-    {% endif %}
+    <h2>Active Listings</h2>
 
     <div class="row">
         {% for listing in listings %}
             <div class="col-md-4 mb-4">
-                <div class="card h-100">
+                <div class="card h-100 {% if not listing.status or listing.end_date <= now %}border-danger{% endif %}">
                     {% if listing.image_url %}
                         <img src="{{ listing.image_url }}" class="card-img-top listing-image" alt="{{ listing.title }}">
                     {% endif %}
@@ -27,6 +18,16 @@
                         <p class="card-text">
                             <strong>Price: ${{ listing.current_price }}</strong>
                         </p>
+
+                        {% if not listing.is_active %}
+                            <p class="text-danger font-weight-bold">Auction Ended</p>
+                            {% if listing.winner %}
+                                <p class="text-muted">Won by {{ listing.winner.username }}</p>
+                            {% else %}
+                                <p class="text-muted">No winner</p>
+                            {% endif %}
+                        {% endif %}
+
                         {% if listing.category %}
                             <p class="card-text">
                                 <small class="text-muted">

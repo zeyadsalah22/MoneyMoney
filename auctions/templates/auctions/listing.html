@@ -60,7 +60,7 @@
 
                     {% if user.is_authenticated and listing.is_active %}
                         {% if user != listing.seller %}
-                            <form id="bid-form" data-listing="{{ listing.title }}">
+                            <form id="bid-form" data-listing-id="{{ listing.id }}">
                                 {% csrf_token %}
                                 <div class="form-group">
                                     <input type="number" class="form-control" id="bid-input" 
@@ -71,7 +71,7 @@
                             </form>
                             <div id="bid-message" class="mt-2"></div>
                         {% else %}
-                            <form action="{% url 'close' listing.title %}" method="post">
+                            <form action="{% url 'close' listing.id %}" method="post">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-warning">Close Auction</button>
                             </form>
@@ -85,7 +85,7 @@
                     <h5 class="card-title">Actions</h5>
                     {% if user.is_authenticated %}
                         <button class="btn btn-outline-secondary watchlist-button" 
-                                data-listing="{{ listing.title }}">
+                                data-listing-id="{{ listing.id }}">
                             {% if watch %}- Watchlist{% else %}+ Watchlist{% endif %}
                         </button>
                         
@@ -104,7 +104,7 @@
         <div class="col-12">
             <h4>Comments</h4>
             {% if user.is_authenticated %}
-                <form id="comment-form" data-listing="{{ listing.title }}">
+                <form id="comment-form" data-listing-id="{{ listing.id }}">
                     {% csrf_token %}
                     <div class="form-group">
                         <textarea class="form-control" id="comment-input" rows="3" required></textarea>
@@ -133,7 +133,8 @@
     .img-fluid {
         width: 100%;
         height: 400px;
-        object-fit: cover;
+        object-fit: contain;
+        background-color: #f8f9fa; /* Optional: to show a light background */
         margin-bottom: 20px;
     }
 </style>

@@ -10,9 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupWatchlistButtons() {
     document.querySelectorAll(".watchlist-button").forEach(button => {
         button.onclick = () => {
-            const title = button.dataset.listing;
+            const id = button.dataset.listingId;
 
-            fetch(`/watch/${title}`, {
+            fetch(`/watch/${id}`, {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": getCSRFToken()
@@ -38,7 +38,7 @@ function setupBidForm() {
 
         const input = document.querySelector("#bid-input");
         const bid = parseFloat(input.value);
-        const title = bidForm.dataset.listing;
+        const id = bidForm.dataset.listingId;
         const message = document.querySelector("#bid-message");
 
         if (isNaN(bid)) {
@@ -47,7 +47,7 @@ function setupBidForm() {
             return;
         }
 
-        fetch(`/bid/${title}`, {
+        fetch(`/bid/${id}`, {
             method: "POST",
             headers: {
                 "X-CSRFToken": getCSRFToken(),
@@ -68,7 +68,7 @@ function setupBidForm() {
             message.className = `alert ${data.success ? "alert-success" : "alert-danger"}`;
 
             if (data.success) {
-                document.querySelector("#current-price").innerText = `$${data.new_price}`;
+                document.querySelector("#current-price").innerText = `${data.new_price}`;
                 document.querySelector("#bid-count").innerText = `${data.bid_count} bid(s) so far.`;
                 input.value = ""; // Clear the input field
             }
@@ -115,9 +115,9 @@ function setupCommentForm() {
         e.preventDefault();
 
         const commentText = document.querySelector("#comment-input").value;
-        const title = commentForm.dataset.listing;
+        const id = commentForm.dataset.listingId;
 
-        fetch(`/comment/${title}`, {
+        fetch(`/comment/${id}`, {
             method: "POST",
             headers: {
                 "X-CSRFToken": getCSRFToken()

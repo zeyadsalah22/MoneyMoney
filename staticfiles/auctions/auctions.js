@@ -68,7 +68,7 @@ function setupBidForm() {
             message.className = `alert ${data.success ? "alert-success" : "alert-danger"}`;
 
             if (data.success) {
-                document.querySelector("#current-price").innerText = `$${data.new_price}`;
+                document.querySelector("#current-price").innerText = `${data.new_price}`;
                 document.querySelector("#bid-count").innerText = `${data.bid_count} bid(s) so far.`;
                 input.value = ""; // Clear the input field
             }

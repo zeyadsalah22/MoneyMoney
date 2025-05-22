@@ -164,8 +164,8 @@ def like(request, listing_id):
 
 @require_POST
 @login_required
-def comment(request, title):
-    listing = get_object_or_404(Listing, title=title)
+def comment(request, id):
+    listing = get_object_or_404(Listing, id=id)
     comment_text = request.POST.get('comment')
 
     if not comment_text:
@@ -184,8 +184,8 @@ def comment(request, title):
 
 @require_POST
 @login_required
-def bid(request, item):
-    listing = get_object_or_404(Listing, title=item)
+def bid(request, id):
+    listing = get_object_or_404(Listing, id=id)
     
     if not listing.is_active():
         return JsonResponse({
@@ -240,8 +240,8 @@ def bid(request, item):
 
 @require_POST
 @login_required
-def watch(request, title):
-    listing = get_object_or_404(Listing, title=title)
+def watch(request, id):
+    listing = get_object_or_404(Listing, id=id)
     watchlist, created = WatchList.objects.get_or_create(user=request.user, item=listing)
     if not created:
         watchlist.delete()
@@ -296,7 +296,7 @@ def category_listings(request, category_id):
 
 # ---------- Close Auction ----------
 @login_required
-def close(request, title):
-    listing = get_object_or_404(Listing, title=title)
+def close(request, id):
+    listing = get_object_or_404(Listing, id=id)
     listing.close_auction()
     return HttpResponseRedirect(reverse("index"))

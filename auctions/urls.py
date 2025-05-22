@@ -16,12 +16,12 @@ urlpatterns = [
     # Listing related
     path("create", views.create, name="create"),
     path("listing/<int:id>", views.listing_page, name="listing"), # jugeer/hyt
-    path("close/<str:title>", views.close, name="close"),
+    path("close/<int:id>", views.close, name="close"),
     
     # AJAX endpoints
-    path("watch/<str:title>", views.watch, name="watch"),
-    path("bid/<str:item>", views.bid, name="bid"),
+    path("watch/<int:id>", views.watch, name="watch"),
+    path("bid/<int:id>", views.bid, name="bid"),
     path("like/<int:listing_id>", views.like, name="like"),
-    path("comment/<str:title>", views.comment, name="comment"),
+    path("comment/<int:id>", views.comment, name="comment"),
     path("create_category", views.create_category, name="create_category"),
 ]
