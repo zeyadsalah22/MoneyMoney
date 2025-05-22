@@ -11,7 +11,7 @@
             <h5>{{listing.title}}</h5>
             <b>Price:</b>{{listing.current_price}}
             <p>{{listing.description}}</p>
-            <a href="{% url 'listing' title=listing.title %}">View</a>
+            <a href="{% url 'listing' id=listing.id %}">View</a>
         </div>
     </div>
     {% empty %}

@@ -15,7 +15,7 @@ urlpatterns = [
     
     # Listing related
     path("create", views.create, name="create"),
-    path("listing/<str:title>", views.listing_page, name="listing"),
+    path("listing/<int:id>", views.listing_page, name="listing"), # jugeer/hyt
     path("close/<str:title>", views.close, name="close"),
     
     # AJAX endpoints

@@ -248,8 +248,8 @@ def watch(request, title):
     return JsonResponse({'watchlist': created})
 
 # ---------- Listing View ----------
-def listing_page(request, title):
-    listing = get_object_or_404(Listing, title=title)
+def listing_page(request, id):
+    listing = get_object_or_404(Listing, id=id)
     bids = Bid.objects.filter(listing=listing)
     comments = Comment.objects.filter(product=listing)
     watch = False

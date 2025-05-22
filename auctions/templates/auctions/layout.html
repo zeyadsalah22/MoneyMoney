@@ -25,9 +25,11 @@
                 <a class="nav-link" href="{% url 'category' %}">Categories</a>
             </li>
             {% if user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'create' %}">Create Listing</a>
-                </li>
+                {% if user.user_type != "bidder" %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'create' %}">Create Listing</a>
+                    </li>
+                {%endif%}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'watchlist' %}">WatchList</a>
                 </li>
