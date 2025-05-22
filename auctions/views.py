@@ -46,7 +46,7 @@ def register(request):
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
 
-        if password != confirmation:
+        if password == None or password != confirmation:
             return render(request, "auctions/register.html", {
                 "message": "Passwords must match."
             })
