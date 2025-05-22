@@ -1,1 +1,1 @@
-web: gunicorn commerce.wsgi:application 
+web: gunicorn commerce.wsgi:application --static-map /static=staticfiles 

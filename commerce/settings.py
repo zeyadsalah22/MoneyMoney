@@ -26,18 +26,19 @@ SECRET_KEY = '6ps8j!crjgrxt34cqbqn7x&b3y%(fny8k8nh21+qa)%ws3fh!q'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'better-fiann-zeyadsalah-3825b5df.koyeb.app',
-    'www.better-fiann-zeyadsalah-3825b5df.koyeb.app',
-    'better-fiann-zeyadsalah-3825b5df.koyeb.app.',
-    'www.better-fiann-zeyadsalah-3825b5df.koyeb.app.',
-    'localhost',
-    '127.0.0.1'
+    # 'better-fiann-zeyadsalah-3825b5df.koyeb.app',
+    # 'www.better-fiann-zeyadsalah-3825b5df.koyeb.app',
+    # 'better-fiann-zeyadsalah-3825b5df.koyeb.app.',
+    # 'www.better-fiann-zeyadsalah-3825b5df.koyeb.app.',
+    # 'localhost',
+    # '127.0.0.1'.
+    "*"
 ]
 
 # Security settings
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = False  # Set to False for local development
+SESSION_COOKIE_SECURE = False  # Set to False for local development
+CSRF_COOKIE_SECURE = False  # Set to False for local development
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -135,3 +137,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'auctions/static'),
+]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
