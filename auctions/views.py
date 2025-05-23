@@ -140,6 +140,16 @@ def create(request):
                 "categories": Category.objects.all()
             })
 
+# ---------- Auctions for Seller ----------
+@login_required
+def my_auctions(request):
+    user = request.user
+    # Adjust 'seller' field to your model's field for auction creator
+    listings = Listing.objects.filter(seller=user)
+    return render(request, "auctions/my_auctions.html", {
+        "listings": listings
+    })
+
 # ---------- Category Creation ----------
 @require_POST
 @login_required

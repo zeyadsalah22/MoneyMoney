@@ -1,0 +1,27 @@
+{% extends 'auctions/layout.html' %}
+
+{% block body %}
+<h2>My Auctions</h2>
+<div class="container">
+    {% for listing in listings %}
+        <div class="row mb-4 align-items-center border p-3 rounded shadow-sm">
+            <div class="col-md-4 text-center">
+                {% if listing.image_url %}
+                    <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;">
+                {% else %}
+                    <img src="https://via.placeholder.com/200x150?text=No+Image" class="img-fluid rounded" alt="No Image">
+                {% endif %}
+            </div>
+            <div class="col-md-8">
+                <h5>{{ listing.title }}</h5>
+                <p><strong>Price:</strong> ${{ listing.current_price }}</p>
+                <p><strong>Description: </strong>{{ listing.description|truncatewords:25 }}</p>
+                <p><strong>Status:</strong> {{ listing.status }}</p>
+                <a href="{% url 'listing' id=listing.id %}" class="btn btn-primary">View</a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">You have not added any auctions yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

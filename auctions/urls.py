@@ -13,7 +13,8 @@ urlpatterns = [
     path("won_auctions", views.won_auctions, name="won_auctions"),
     path("category", views.category, name="category"),
     path("category/<int:category_id>", views.category_listings, name="category_listings"),
-    
+    path("my_auctions/", views.my_auctions, name="my_auctions"),
+
     # Listing related
     path("create", views.create, name="create"),
     path("listing/<int:id>", views.listing_page, name="listing"), # jugeer/hyt
