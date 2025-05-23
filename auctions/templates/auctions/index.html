@@ -1,56 +1,19 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    <h2>Active Listings</h2>
-
-    <div class="row">
-        {% for listing in listings %}
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 {% if not listing.status or listing.end_date <= now %}border-danger{% endif %}">
-                    {% if listing.image_url %}
-                        <img src="{{ listing.image_url }}" class="card-img-top listing-image" alt="{{ listing.title }}">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="{% url 'listing' id=listing.id %}">{{ listing.title }}</a>
-                        </h5>
-                        <p class="card-text">{{ listing.description|truncatewords:30 }}</p>
-                        <p class="card-text">
-                            <strong>Price: ${{ listing.current_price }}</strong>
-                        </p>
-
-                        {% if not listing.is_active %}
-                            <p class="text-danger font-weight-bold">Auction Ended</p>
-                            {% if listing.winner %}
-                                <p class="text-muted">Won by {{ listing.winner.username }}</p>
-                            {% else %}
-                                <p class="text-muted">No winner</p>
-                            {% endif %}
-                        {% endif %}
-
-                        {% if listing.category %}
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    Category: <a href="{% url 'category_listings' category_id=listing.category.id %}">{{ listing.category.name }}</a>
-                                </small>
-                            </p>
-                        {% endif %}
-                        <p class="card-text">
-                            <small class="text-muted">
-                                Listed by {{ listing.seller.username }} on {{ listing.created_at|date:"F j, Y" }}
-                            </small>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        {% empty %}
-            <div class="col-12">
-                <div class="alert alert-info">
-                    No active listings available.
-                </div>
-            </div>
-        {% endfor %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>{% if category %}{{ category.name }}{% else %}Active Listings{% endif %}</h2>
+    <select id="sort-select" class="form-select w-auto">
+        <option value="last_added">Last Added</option>
+        <option value="name">Name</option>
+        <option value="price">Price</option>
+        <option value="category">Category</option>
+    </select>
     </div>
+
+    <div id="listings-container" class="row">
+        {% include 'auctions/listing_cards.html' %}
+    </div>    
 
     <style>
     .listing-image {
@@ -60,5 +23,5 @@
         background-color: #f8f9fa; /* Optional: to show a light background */
         margin-bottom: 20px;
     }
-</style>
+    </style>
 {% endblock %}

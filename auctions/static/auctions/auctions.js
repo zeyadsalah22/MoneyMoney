@@ -6,6 +6,23 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTimeRemaining();
 });
 
+
+// Custom sorting option
+document.addEventListener('DOMContentLoaded', () => {
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            const sortKey = sortSelect.value;
+
+            fetch(`/sort-listings/?sort=${sortKey}`)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('listings-container').innerHTML = data;
+                });
+        });
+    }
+});
+
 // Toggle watchlist
 function setupWatchlistButtons() {
     document.querySelectorAll(".watchlist-button").forEach(button => {

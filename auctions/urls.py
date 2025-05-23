@@ -9,6 +9,7 @@ urlpatterns = [
     path("logout", views.logout_view, name="logout"),
     path("register", views.register, name="register"),
     path("watchlist", views.watchlist, name="watchlist"),
+    path("closed_auctions", views.closed_auctions, name="closed_auctions"),
     path("won_auctions", views.won_auctions, name="won_auctions"),
     path("category", views.category, name="category"),
     path("category/<int:category_id>", views.category_listings, name="category_listings"),
@@ -24,4 +25,5 @@ urlpatterns = [
     path("like/<int:listing_id>", views.like, name="like"),
     path("comment/<int:id>", views.comment, name="comment"),
     path("create_category", views.create_category, name="create_category"),
+    path("sort-listings/", views.sort_listings, name="sort_listings"),
 ]

@@ -13,11 +13,27 @@ from .models import User, Listing, Comment, Bid, WatchList, Like, Category
 # ---------- Index Page ----------
 def index(request):
     # Get all listings and filter in Python for those that are active
-    all_listings = Listing.objects.all()
+    all_listings = Listing.objects.all().order_by('-created_at')
     listings = [listing for listing in all_listings if listing.is_active()]
     return render(request, "auctions/index.html", {
         "listings": listings
     })
+
+def sort_listings(request):
+    sort_key = request.GET.get('sort', 'last_added')
+
+    sort_map = {
+        'last_added': '-created_at',
+        'name': 'title',
+        'price': 'current_price',
+        'category': 'category__name',
+    }
+
+    sort_order = sort_map.get(sort_key, '-created_at')
+    listings = Listing.objects.filter(status=True).order_by(sort_order)
+
+    return render(request, "auctions/listing_cards.html", {"listings": listings})
+
 
 # ---------- Authentication ----------
 def login_view(request):
@@ -302,3 +318,11 @@ def close(request, id):
     listing = get_object_or_404(Listing, id=id)
     listing.close_auction()
     return HttpResponseRedirect(reverse("index"))
+
+# --
+def closed_auctions(request):
+    all_listings = Listing.objects.all()
+    listings = [listing for listing in all_listings if not listing.is_active()]
+    return render(request, "auctions/closed_auctions.html", {
+        "listings": listings
+    })

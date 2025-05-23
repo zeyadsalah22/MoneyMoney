@@ -22,6 +22,9 @@
                 <a class="nav-link" href="{% url 'index' %}">Active Listings</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="{% url 'closed_auctions' %}">Closed Auctions</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="{% url 'category' %}">Categories</a>
             </li>
             {% if user.is_authenticated %}
@@ -30,6 +33,7 @@
                         <a class="nav-link" href="{% url 'create' %}">Create Listing</a>
                     </li>
                 {%endif%}
+                
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'watchlist' %}">WatchList</a>
                 </li>

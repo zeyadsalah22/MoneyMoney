@@ -1,0 +1,30 @@
+{% for listing in listings %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            {% if listing.image_url %}
+                <img src="{{ listing.image_url }}" class="card-img-top listing-image" alt="{{ listing.title }}">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{% url 'listing' id=listing.id %}">{{ listing.title }}</a>
+                </h5>
+                <p class="card-text">{{ listing.description|truncatewords:30 }}</p>
+                <p class="card-text">
+                    <strong>Price: ${{ listing.current_price }}</strong>
+                </p>
+                {% if listing.category %}
+                    <p class="card-text">
+                        <small class="text-muted">Category: {{ listing.category.name }}</small>
+                    </p>
+                {% endif %}
+                <p class="card-text">
+                    <small class="text-muted">Listed by {{ listing.seller.username }} on {{ listing.created_at|date:"F j, Y" }}</small>
+                </p>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">No listings found.</div>
+    </div>
+{% endfor %}
