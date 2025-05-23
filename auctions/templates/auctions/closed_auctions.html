@@ -4,30 +4,60 @@
 <h2 class="mb-4">Closed Auctions</h2>
 
 <div class="container">
+
+    <!-- Auctions with winners -->
+    <h4 class="text-success mb-3">Auctions with Winners</h4>
+    {% with listings|dictsortreversed:"end_date" as sorted_listings %}
+        {% for listing in sorted_listings %}
+            {% if listing.winner %}
+                <div class="row mb-4 align-items-center border p-3 rounded shadow-sm">
+                    <div class="col-md-4 text-center">
+                        {% if listing.image_url %}
+                            <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;">
+                        {% else %}
+                            <img src="https://via.placeholder.com/200x150?text=No+Image" class="img-fluid rounded" alt="No Image">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <h5>{{ listing.title }}</h5>
+                        <p><strong>Price:</strong> ${{ listing.current_price }}</p>
+                        <p><strong>Description: </strong>{{ listing.description|truncatewords:25 }}</p>
+                        <p class="text-danger font-weight-bold">Auction Ended Since {{ listing.end_date }}</p>
+                        <p class="text-success font-weight-bold">Won by <u>{{ listing.winner.username }}</u></p>
+                        <a href="{% url 'listing' id=listing.id %}" class="btn btn-primary">View</a>
+                    </div>
+                </div>
+            {% endif %}
+        {% empty %}
+            <div class="alert alert-info">No Listings with winners</div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- Auctions with no winners -->
+    <h4 class="text-danger mt-5 mb-3">Auctions with No Winners</h4>
     {% for listing in listings %}
-        <div class="row mb-4 align-items-center border p-3 rounded shadow-sm">
-            <div class="col-md-4 text-center">
-                {% if listing.image_url %}
-                    <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;">
-                {% else %}
-                    <img src="https://via.placeholder.com/200x150?text=No+Image" class="img-fluid rounded" alt="No Image">
-                {% endif %}
+        {% if not listing.winner %}
+            <div class="row mb-4 align-items-center border p-3 rounded shadow-sm">
+                <div class="col-md-4 text-center">
+                    {% if listing.image_url %}
+                        <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;">
+                    {% else %}
+                        <img src="https://via.placeholder.com/200x150?text=No+Image" class="img-fluid rounded" alt="No Image">
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <h5>{{ listing.title }}</h5>
+                    <p><strong>Price:</strong> ${{ listing.current_price }}</p>
+                    <p><strong>Description: </strong>{{ listing.description|truncatewords:25 }}</p>
+                    <p class="text-danger font-weight-bold">Auction Ended Since {{ listing.end_date }}</p>
+                    <p class="text-danger font-weight-bold">No winner</p>
+                    <a href="{% url 'listing' id=listing.id %}" class="btn btn-primary">View</a>
+                </div>
             </div>
-            <div class="col-md-8">
-                <h5>{{ listing.title }}</h5>
-                <p><strong>Price:</strong> ${{ listing.current_price }}</p>
-                <p><strong>Description: </strong>{{ listing.description|truncatewords:25 }}</p>
-                 <p class="text-danger font-weight-bold">Auction Ended Since {{listing.end_date}}</p> 
-                            {% if listing.winner %}
-                                <p class="text-success font-weight-bold">Won by <u> {{ listing.winner.username }}</u></p>
-                            {% else %}
-                                <p class="text-danger font-weight-bold">No winner</p>
-                            {% endif %}
-                <a href="{% url 'listing' id=listing.id %}" class="btn btn-primary">View</a>
-            </div>
-        </div>
+        {% endif %}
     {% empty %}
         <div class="alert alert-info">No Listings</div>
     {% endfor %}
+
 </div>
 {% endblock %}
