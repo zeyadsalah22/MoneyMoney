@@ -12,7 +12,9 @@ from .models import User, Listing, Comment, Bid, WatchList, Like, Category
 
 # ---------- Index Page ----------
 def index(request):
-    listings = Listing.objects.filter(status=True)
+    # Get all listings and filter in Python for those that are active
+    all_listings = Listing.objects.all()
+    listings = [listing for listing in all_listings if listing.is_active()]
     return render(request, "auctions/index.html", {
         "listings": listings
     })
